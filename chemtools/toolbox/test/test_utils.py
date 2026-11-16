@@ -89,6 +89,25 @@ def test_get_molecular_grid_raises():
     assert_raises(ValueError, get_molecular_grid, molecule, grid)
 
 
+def test_get_molecular_grid():
+    with path('chemtools.data', 'water_b3lyp_sto3g.fchk') as fname:
+        molecule = Molecule.from_file(fname)
+        grid = UniformGrid.from_file(fname)
+    # a grid that matches the molecule is the second argument and is returned as it is
+    assert get_molecular_grid(molecule, grid) is grid
+    assert get_molecular_grid([molecule, molecule], grid) is grid
+    # without a grid, a default grid is made and R is the scale factor of its radial grid
+    default = get_molecular_grid(molecule)
+    assert isinstance(default, MolecularGrid)
+    assert_allclose(default.atcoords, molecule.coordinates)
+    scaled = get_molecular_grid(molecule, R=2)
+    assert isinstance(scaled, MolecularGrid)
+    assert_allclose(scaled.atcoords, molecule.coordinates)
+    assert default.points.shape == scaled.points.shape
+    assert not np.allclose(default.points, scaled.points)
+    assert_allclose(get_molecular_grid(molecule, None, 2).points, scaled.points)
+
+
 def test_get_dict_energy_raises():
     # check molecule
     with path('chemtools.data', 'ch4_uhf_ccpvdz.fchk') as file1:
